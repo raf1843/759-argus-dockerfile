@@ -1,0 +1,11 @@
+---
+library: true
+warnOnImplicitThis: false
+name: actions-codeql-docker
+version: 0.0.1
+groups: dockerfile
+extractor: dockerfile
+dbscheme: dockerfile.dbscheme
+dependencies:
+  codeql/util: "*"
+  codeql/dataflow: "*"
