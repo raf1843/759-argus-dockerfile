@@ -22,9 +22,13 @@
 
 import yaml
 from .ghaction import GHAction
-
+from argus_components.utils import CodeQL
+from argus_components.common.config import LOCAL_FOLDER
+from argus_components.common.pylogger import get_logger
 from argus_components.report import ActionReport
 import argus_components.ci as ci
+
+logger = get_logger("ghdocker_action")
 
 class GHDockerAction(GHAction):
 
@@ -69,5 +73,26 @@ class GHDockerAction(GHAction):
         with open(self.action_yml_path, 'r') as f:
             action_yml = yaml.safe_load(f)
             self.parse_inputs(action_yml)
+            print(self.parsed_inputs)
             self.parse_outputs(action_yml)
+            print(self.parsed_outputs)
+
+        # Run CodeQL
+        codeql_folder = LOCAL_FOLDER / f"{self.action_name.replace('/', '#')}_codeql"
+
+        if not codeql_folder.exists():
+            logger.debug(f"Creating folder {codeql_folder}")
+            CodeQL.compile_codeql_db_docker(self.action_folder, codeql_folder)
+        else:
+            logger.debug(f"CodeQL folder {codeql_folder} already exists")
+
+        # Run CodeQL query
+        if CodeQL.query_results_present(codeql_folder):
+            logger.debug(f"CodeQL query results already present in {codeql_folder}")
+        else:
+            logger.debug(f"Running CodeQL query in {codeql_folder}")
+            results = CodeQL.run_codeql_query_docker(codeql_folder)
+
+        results = CodeQL.parse_codeql_results_docker(codeql_folder)
+
         return ActionReport({}, self)

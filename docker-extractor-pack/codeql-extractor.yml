@@ -1,0 +1,23 @@
+name: dockerfile
+display_name: Dockerfile
+version: 0.0.1
+languages:
+  - dockerfile
+entry_point: dockerfile-extractor
+column_kind: "utf8"
+legacy_qltest_extraction: true
+github_api_languages:
+  - dockerfile
+scc_languages:
+  - dockerfile
+file_types:
+  - name: dockerfile
+    display_name: Dockerfile
+    extensions:
+      - .dockerfile
+file_discovery:
+  include:
+    - Dockerfile
+    - '*.dockerfile'
+    - '**/Dockerfile'
+    - '**/*.dockerfile'

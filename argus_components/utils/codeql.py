@@ -27,7 +27,7 @@ import subprocess
 import urllib
 from time import sleep
 
-from argus_components.common.config import CODEQL_BIN, QUERY_PATH
+from argus_components.common.config import CODEQL_BIN, QUERY_PATH, DOCKER_EXTRACTOR_PATH, DOCKER_QUERY_PATH
 from argus_components.common.pylogger import get_logger
 
 logger = get_logger("repo")
@@ -73,6 +73,12 @@ def _check_if_db_exists(repo_path : pathlib.Path) -> bool:
         return False
     return True
 
+def _check_if_db_exists_docker(repo_path : pathlib.Path) -> bool:
+    folder = repo_path / "db-dockerfile"
+    if folder.exists() == False:
+        return False
+    return True
+
 def _extract_db_error(repo_path : pathlib.Path, etype = "create") -> str:
     folder = repo_path / "log"
     if folder.exists() == False:
@@ -88,9 +94,17 @@ class CodeQL:
         if not _check_if_db_exists(output_dir):
             raise Exception(f"Error Creating DB : {repo_path}", _extract_db_error(repo_path))
 
+    # Create Codeql Database for the corresponding repository (Dockerfile)
+    @staticmethod
+    def compile_codeql_db_docker(repo_path, output_dir):
+        cmd = f"{CODEQL_BIN} database create --language=dockerfile --mode=brutal --finalize-dataset --search-path {DOCKER_EXTRACTOR_PATH} -s {repo_path} {output_dir}"
+        run_cmd(cmd, verbose=True)
+        if not _check_if_db_exists_docker(output_dir):
+            raise Exception(f"Error Creating DB : {repo_path}", _extract_db_error(repo_path))
+
     @staticmethod
     def is_valid_codeql_db(repo_path) -> bool:
-        if not _check_if_db_exists(repo_path):
+        if not _check_if_db_exists(repo_path) and not _check_if_db_exists_docker(repo_path):
             return False
         return True
     
@@ -124,6 +138,21 @@ class CodeQL:
         if folder.exists() == False:
             raise Exception(f"No results folder found for {repo_path}", _extract_db_error(repo_path, "queries"))
 
+    # Run Codeql Query (Dockerfile)
+    @staticmethod
+    def run_codeql_query_docker(repo_path : pathlib.Path):
+        cmd = f"{CODEQL_BIN} database run-queries --threads=2 {repo_path} {DOCKER_QUERY_PATH}/ql/lib/queries"
+        stdout, stderr = run_cmd(cmd, verbose=True)
+
+        # if the query failed, raise an error
+        if "A fatal error occurred" in stderr:
+            raise Exception(f"Error Running Query : {repo_path} with Error Message on STDERR as : {stderr}", _extract_db_error(repo_path, "queries"))
+
+        # Check if results are present
+        folder = repo_path / "results/actions-codeql-docker/queries"
+        if folder.exists() == False:
+            raise Exception(f"No results folder found for {repo_path}", _extract_db_error(repo_path, "queries"))
+
     @staticmethod
     def parse_codeql_results(repo_path : pathlib.Path):
         folder = repo_path / "results/actions-codeql"
@@ -144,6 +173,17 @@ class CodeQL:
         results["ContextToSink"] = _parse_ContextToSink_results(CodeQL.decode_bqrs(folder / CONTEXT_SINKS_FILE, repo_path)) 
         results["ContextToLSink"] = _parse_ContextToSink_results(CodeQL.decode_bqrs(folder / LESS_CONTEXT_SINKS_FILE, repo_path))
         results["ContextToOutput"] = _parse_ContextToOutput_results(CodeQL.decode_bqrs(folder / CONTEXT_OUTPUT_FILE, repo_path))
+        return results
+
+    @staticmethod
+    def parse_codeql_results_docker(repo_path : pathlib.Path):
+        folder = repo_path / "results/actions-codeql-docker/queries"
+        if folder.exists() == False:
+            raise Exception(f"No results folder found for {repo_path}", _extract_db_error(repo_path, "queries"))
+
+        results = {}
+
+        results["ArgToSink"] = _parse_ArgToSink_results(CodeQL.decode_bqrs(folder / "sinks.bqrs", repo_path))
         return results
 
 
@@ -228,7 +268,7 @@ def _parse_ArgToSink_results(json_data : dict) -> list:
     for arg in action_arg_set:
         arg["sinkset"] = list(arg["sinkset"])
 
-    return action_arg_set 
+    return action_arg_set
 
 def _parse_EnvToSink_results(json_data : dict) -> list:
     if "#select" not in json_data:

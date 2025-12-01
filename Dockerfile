@@ -19,9 +19,14 @@ RUN unzip codeql-linux64.zip
 COPY argus.py poetry.lock pyproject.toml /root/
 COPY argus_components /root/argus_components
 COPY qlqueries /root/qlqueries
+COPY docker-extractor-pack /root/docker-extractor-pack
+COPY docker-queries /root/docker-queries
 RUN poetry install
+
+# Install Dockerfile CodeQL pack
+RUN cd /root/docker-queries/ql/lib/ && /root/codeql_home/codeql/codeql pack install
 
 # Now run argus
 WORKDIR /root
 RUN mkdir results
-ENTRYPOINT ["poetry", "run", "python3", "argus.py"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]

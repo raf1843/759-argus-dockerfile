@@ -26,6 +26,8 @@ import os
 LOCAL_FOLDER : pathlib.Path = pathlib.Path('/tmp')
 CODEQL_BIN : pathlib.Path = pathlib.Path('~/codeql_home/codeql/codeql')
 QUERY_PATH : pathlib.Path = pathlib.Path(os.path.dirname(__file__)) / "../../qlqueries"
+DOCKER_EXTRACTOR_PATH : pathlib.Path = pathlib.Path(os.path.dirname(__file__)) / "../../docker-extractor-pack"
+DOCKER_QUERY_PATH : pathlib.Path = pathlib.Path(os.path.dirname(__file__)) / "../../docker-queries"
 ENABLE_LOW_PRIORITY_REPORTS : bool = True
 RESULTS_FOLDER : pathlib.Path = pathlib.Path("/results")
 
