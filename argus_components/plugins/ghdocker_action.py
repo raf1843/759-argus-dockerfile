@@ -95,4 +95,4 @@ class GHDockerAction(GHAction):
 
         results = CodeQL.parse_codeql_results_docker(codeql_folder)
 
-        return ActionReport({}, self)
+        return ActionReport(results, self)

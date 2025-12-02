@@ -50,7 +50,7 @@ class ActionReport(Report):
 
     def parse_docker_report(self, report_dict):
         # Sinks
-        self.arg_to_sink = []
+        self.arg_to_sink = self._convert_to_packed_format(report_dict['ArgToSink'])
         # Composite action can't be passed environment variables
         self.env_to_sink = []
         # context to sink
@@ -130,6 +130,8 @@ class ActionReport(Report):
             return self.get_js_report(output_file)
         elif isinstance(self.action, plugins.GHCompositeAction):
             return self.get_composite_report(output_file)
+        elif isinstance(self.action, plugins.GHDockerAction):
+            return self.get_docker_report(output_file)
 
     def get_js_report(self, output_file):
 
@@ -224,7 +226,6 @@ class ActionReport(Report):
 
     def get_composite_report(self, output_file):
 
-
         run = sarif_om.Run(tool=sarif_om.Tool(driver=sarif_om.ToolComponent(name="Argus", version="0.1.1")), results=[])
         
         run.results.extend(self._convert_to_sarif_report_no_loc(self.arg_to_sink, ("ArgToSink", 0), 
@@ -290,3 +291,24 @@ class ActionReport(Report):
                 )
             results.append(result)
         return results
+
+
+    def get_docker_report(self, output_file):
+
+        run = sarif_om.Run(tool=sarif_om.Tool(driver=sarif_om.ToolComponent(name="Argus", version="0.1.1")), results=[])
+        
+        run.results.extend(self._convert_to_sarif_report(self.arg_to_sink, ("ArgToSink", 0), 
+            message="All input arguments are potentially being passed into a dangerous sink ({sink_link}). It is possible that a user of this action could pass in a tainted parameter that could cause the action to behave in an unexpected way.",
+            severity="warning"))
+
+        sarif_report = sarif_om.SarifLog(
+            schema_uri="https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            version="2.1.0",
+            runs=[run]
+        )
+        
+        if output_file == None:
+            print(to_json(sarif_report))
+        else:
+            with open(output_file, "w") as f:
+                f.write(to_json(sarif_report))

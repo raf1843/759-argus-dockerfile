@@ -334,7 +334,7 @@ class TaintEngine:
             raise Exception(f"Unknown output taint type: {type}")
 
     def check_packed_data(self, packed_data, input_type = "", alert_type = ""):
-        print(f"Checking packed data {packed_data}")
+        #print(f"Checking packed data {packed_data}")
         for item in packed_data:
             tainted = self.input_taint_by_type(input_type, item)
             if tainted:
@@ -601,17 +601,18 @@ class TaintEngine:
         assert isinstance(ac_task, GHActionTask) == True, "handle_action: ac_task is not GHActionTask"
     
         if ac_task.action_parse_type == GHActionTask.LOCAL_ACTION:
-            # #TODO: pass args
-            # action : Action.Action = self.repo.is_action_evaluated(ac_task.action_name, ac_task.action_path, ac_task.action_version)
-            # if action == None:
-            #     action = Action.Action(ac_task.action_path, {}, ac_task.action_path)
-            #     action.run()
-            #     self.repo.add_evaluated_action(action)
-            # else:
-            #     logger.info(f"Action {ac_task.action_name} : Version {ac_task.action_version} is already evaluated.. using cache")
-            # self.check_action_sinks(ac_task, action.report)
-            # self.propogate_action_taint(ac_task, action.report)
-            pass
+            # TODO this was commented out, see if it works
+            # doesn't have a version? so ignore the cache thing
+            #TODO: pass args
+            #action : Action.Action = self.repo.is_action_evaluated(ac_task.action_name, ac_task.action_path, ac_task.action_version)
+            #if action == None:
+            action = Action.Action(ac_task.action_url, {}, ac_task.action_path, action_type=GHActionTask.LOCAL_ACTION)
+            action.run()
+            self.repo.add_evaluated_action(action)
+            #else:
+            #   logger.info(f"Action {ac_task.action_name} : Version {ac_task.action_version} is already evaluated.. using cache")
+            self.check_action_sinks(ac_task, action.report)
+            self.propogate_action_taint(ac_task, action.report)
         elif ac_task.action_parse_type == GHActionTask.REMOTE_ACTION:
             #TODO: pass args
             # try:
@@ -630,7 +631,8 @@ class TaintEngine:
             #     logger.error(e)
                 
         elif ac_task.action_parse_type == GHActionTask.DOCKERHUB_ACTION:
-            # Taise an alert if there is taint loss
+            # NOTE: DockerHub still not supported, local Docker actions should be
+            logger.warning("DockerHub actions not supported")
             pass
         else:
             raise Exception("Unknown action type")

@@ -184,6 +184,7 @@ class CodeQL:
         results = {}
 
         results["ArgToSink"] = _parse_ArgToSink_results(CodeQL.decode_bqrs(folder / "sinks.bqrs", repo_path))
+
         return results
 
 

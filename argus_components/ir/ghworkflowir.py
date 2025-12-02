@@ -395,12 +395,15 @@ class GHActionTask(GHTask):
         self.id = step.id
         self.name = step.name
 
+        print("step:", step)
+        print("exec:", step.run)
+
         # parse the exec type
         exec = step.run
         self.action_version = exec["version"]
         self.action_parse_type = GHActionTask.get_action_parse_type(exec["name"])
         if self.action_parse_type == GHActionTask.LOCAL_ACTION:
-            self.action_name = ""
+            self.action_name = exec["name"]
             self.action_path = exec["name"]
         elif self.action_parse_type == GHActionTask.REMOTE_ACTION:
             self.action_name, self.action_path = GHActionTask.split_action_name(exec["name"])

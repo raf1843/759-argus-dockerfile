@@ -44,7 +44,7 @@ class Action:
             raise Exception("Only GitHub Actions are supported for now")
 
         if self.action_type == self.LOCAL_ACTION:
-            pass
+            self.action_name = self.action_path
         elif self.action_type == self.REMOTE_ACTION:
             self.action_name = self._get_action_name_from_url()
             self.name = self.action_name.replace("#", "/")
@@ -60,7 +60,13 @@ class Action:
             self._run_remote_action()
         
     def _run_local_action(self):
-        pass 
+        folder = LOCAL_FOLDER / self.action_name
+        logger.info(f"Cloning action to {folder}")
+        # clone the repository
+        clone_repo(self.action_url, folder, self.options_dict)
+        # Get action Object
+        action_obj = GHAction.identify_action(self.name, self.action_path, folder, self)
+        self.report = action_obj.run() 
 
     def _run_remote_action(self):
         folder = LOCAL_FOLDER / self.action_name
