@@ -73,9 +73,7 @@ class GHDockerAction(GHAction):
         with open(self.action_yml_path, 'r') as f:
             action_yml = yaml.safe_load(f)
             self.parse_inputs(action_yml)
-            print(self.parsed_inputs)
             self.parse_outputs(action_yml)
-            print(self.parsed_outputs)
 
         # Run CodeQL
         codeql_folder = LOCAL_FOLDER / f"{self.action_name.replace('/', '#')}_codeql"
@@ -93,6 +91,10 @@ class GHDockerAction(GHAction):
             logger.debug(f"Running CodeQL query in {codeql_folder}")
             results = CodeQL.run_codeql_query_docker(codeql_folder)
 
-        results = CodeQL.parse_codeql_results_docker(codeql_folder)
+        taint_inputs = []
+        for i in self.parsed_inputs:
+            taint_inputs.append(i["name"])
 
-        return ActionReport({}, self)
+        results = CodeQL.parse_codeql_results_docker(codeql_folder, str(taint_inputs))
+
+        return ActionReport(results, self)

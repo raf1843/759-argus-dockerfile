@@ -54,6 +54,13 @@ Argus can be run inside a docker container. To do so, follow the steps:
   - docker-compose run argus --mode {mode} --url {url to target repo}
 - Results will be available inside the `results` folder
 
+Temporary commands:
+```bash
+docker compose up -d
+docker exec -it 759-argus-dockerfile-argus-1 /bin/bash
+docker compose down --rmi all
+```
+
 ## Viewing SARIF Results
 
 You can view SARIF results either through an online viewer or with a Visual Studio Code (VSCode) extension.

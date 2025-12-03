@@ -176,14 +176,14 @@ class CodeQL:
         return results
 
     @staticmethod
-    def parse_codeql_results_docker(repo_path : pathlib.Path):
+    def parse_codeql_results_docker(repo_path : pathlib.Path, action_inputs : str):
         folder = repo_path / "results/actions-codeql-docker/queries"
         if folder.exists() == False:
             raise Exception(f"No results folder found for {repo_path}", _extract_db_error(repo_path, "queries"))
 
         results = {}
 
-        results["ArgToSink"] = _parse_ArgToSink_results(CodeQL.decode_bqrs(folder / "sinks.bqrs", repo_path))
+        results["ArgToSink"] = _parse_ArgToSink_results_docker(CodeQL.decode_bqrs(folder / "sinks.bqrs", repo_path), action_inputs)
         return results
 
 
@@ -518,5 +518,42 @@ def _parse_ContextToOutput_results(json_data : dict) -> list:
         arg["outputset"] = list(arg["outputset"])
         arg["envset"] = list(arg["envset"])
         arg["saveset"] = list(arg["saveset"])        
+
+    return action_arg_set
+
+def _parse_ArgToSink_results_docker(json_data : dict, action_inputs : str) -> list:
+    if "#select" not in json_data:
+        return []
+    
+    tuples = json_data["#select"]['tuples']
+
+    if len(tuples) == 0:
+        return []
+
+    # Array of dicts to store the results
+    action_arg_set = []
+    action_name_set = []
+
+    for tuple in tuples:
+        curr_arg = {
+            "name" : "Action/Workflow Inputs",
+            "source" : action_inputs, 
+            "type" : "input",
+            "sinks" : [],
+            "sinkset" : set()
+        }
+        action_arg_set.append(curr_arg)
+
+        # Add the details of the sink to the arg_set
+        curr_arg["sinks"].append({
+            "function" : tuple[3],
+            "sink" : parse_url(tuple[2]['url']['uri']) + ":" + str(tuple[2]['url']['startLine']) + ":" + str(tuple[2]['url']['startColumn'])
+        })               
+
+        # Add the sink to the list
+        curr_arg["sinkset"].add(tuple[3])
+
+    for arg in action_arg_set:
+        arg["sinkset"] = list(arg["sinkset"])
 
     return action_arg_set

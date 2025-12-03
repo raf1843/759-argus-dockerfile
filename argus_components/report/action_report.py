@@ -50,7 +50,7 @@ class ActionReport(Report):
 
     def parse_docker_report(self, report_dict):
         # Sinks
-        self.arg_to_sink = []
+        self.arg_to_sink = self._convert_to_packed_format(report_dict['ArgToSink'])
         # Composite action can't be passed environment variables
         self.env_to_sink = []
         # context to sink
@@ -130,6 +130,8 @@ class ActionReport(Report):
             return self.get_js_report(output_file)
         elif isinstance(self.action, plugins.GHCompositeAction):
             return self.get_composite_report(output_file)
+        elif isinstance(self.action, plugins.GHDockerAction):
+            return self.get_docker_report(output_file)
 
     def get_js_report(self, output_file):
 
@@ -213,6 +215,36 @@ class ActionReport(Report):
                 )
             results.append(result)
         return results
+
+    def _convert_to_sarif_report_docker(self, reports_set, category, message="", severity="note"):
+        results = []
+        for issue in reports_set:
+            # Add a new result for each issue
+            result = sarif_om.Result(
+                message=sarif_om.Message(
+                    text=message.format(
+                        name=issue['source_location'], 
+                        sink_link=self._generate_sink_links(issue['sinks'])
+                    )
+                ),
+                related_locations=[],
+                rule_id=category[0],
+                rule_index=category[1],
+                level=severity
+            )
+            
+            for ctr, sink in enumerate(issue['sinks']):
+                result.related_locations.append(
+                    sarif_om.Location(
+                        id=ctr,
+                        physical_location=sarif_om.PhysicalLocation(
+                            artifact_location=sarif_om.ArtifactLocation(uri=sink['sink_location']),
+                            region=sarif_om.Region(start_line=int(sink['sink_location'].split(":")[-2]))
+                        )
+                    )
+                )
+            results.append(result)
+        return results
     
     def _generate_sink_links(self, sinks):
         sink_str = ""
@@ -223,7 +255,6 @@ class ActionReport(Report):
         return sink_str[:-1]
 
     def get_composite_report(self, output_file):
-
 
         run = sarif_om.Run(tool=sarif_om.Tool(driver=sarif_om.ToolComponent(name="Argus", version="0.1.1")), results=[])
         
@@ -290,3 +321,24 @@ class ActionReport(Report):
                 )
             results.append(result)
         return results
+
+
+    def get_docker_report(self, output_file):
+
+        run = sarif_om.Run(tool=sarif_om.Tool(driver=sarif_om.ToolComponent(name="Argus", version="0.1.1")), results=[])
+        
+        run.results.extend(self._convert_to_sarif_report_docker(self.arg_to_sink, ("ArgToSink", 0), 
+            message="Input arguments ({name}) are potentially being passed into a dangerous sink ({sink_link}). It is possible that a user of this action could pass in a tainted parameter that could cause the action to behave in an unexpected way.",
+            severity="warning"))
+
+        sarif_report = sarif_om.SarifLog(
+            schema_uri="https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            version="2.1.0",
+            runs=[run]
+        )
+        
+        if output_file == None:
+            print(to_json(sarif_report))
+        else:
+            with open(output_file, "w") as f:
+                f.write(to_json(sarif_report))
