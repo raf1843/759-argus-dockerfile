@@ -1,0 +1,36 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Argus",
+          "version": "0.1.1"
+        }
+      },
+      "results": [
+        {
+          "message": {
+            "text": "Input arguments (['key', 'value', 'yml-file']) are potentially being passed into a dangerous sink ([EntrypointInstruction](0)). It is possible that a user of this action could pass in a tainted parameter that could cause the action to behave in an unexpected way."
+          },
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "region": {
+                  "startLine": 9
+                },
+                "artifactLocation": {
+                  "uri": "file:/tmp/Quving#action-yml-update/Dockerfile:9:1"
+                }
+              }
+            }
+          ],
+          "ruleId": "ArgToSink",
+          "ruleIndex": 0
+        }
+      ]
+    }
+  ],
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
+}

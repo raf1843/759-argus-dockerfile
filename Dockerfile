@@ -29,4 +29,4 @@ RUN cd /root/docker-queries/ql/lib/ && /root/codeql_home/codeql/codeql pack inst
 # Now run argus
 WORKDIR /root
 RUN mkdir results
-ENTRYPOINT ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["poetry", "run", "python3", "argus.py"]
