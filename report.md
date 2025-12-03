@@ -27,7 +27,7 @@ Taint analysis is a thoroughly explored field, but taint analysis on Dockerfiles
 *“Revisiting Security Practices for GitHub Actions Workflows”* (Huang & Lin, 2025) continues to analyze the best security practices for GitHub Actions and Workflows. These authors cite ARGUS and use their dataset for analysis, though GHAST is their tool of choice. This paper investigates security issues found in GitHub Workflows, including command injection, misconfiguration, secret leakage, etc. This paper helped to motivate our work in creating support for Docker Actions within GitHub Workflows since 30% of GitHub Actions are within Docker Containers. Being able to find any secret leaks or injection sites within these Docker containers was our main goal.
 
 This comparison table denotes how the chosen related works are relevant to our contribution. Our contribution to ARGUS checks off the last box.
-![Paper comparison table](images/comparison.png)
+![Paper comparison table](images/comparison-table.png)
 
 # Challenges
 
@@ -40,12 +40,16 @@ Our overall contribution: ARGUS can now be used to analyze some Docker actions, 
 ## Contribution 1: Dockerfile CodeQL Extractor
 Our first contribution was developing a [CodeQL extractor]((docker-extractor-pack) for Dockerfiles. This first involved determining the correct structure for a CodeQL extractor, since although CodeQL is open-source, it does not have much documentation for developers. We attempted to keep our extractor as close as possible to its official counterparts, writing the main logic in Rust and using a treesitter Dockerfile parser. Creating the extractor allowed us to create CodeQL databases from arbitrary Dockerfiles which can then be queried. This is how ARGUS operates on JavaScript actions, so we aimed to mimic that functionality.
 
-![](images/codeql-query.png)
+![Example CodeQL Query on Dockerfile](images/codeql-query.png)
 
-![](images/codeql-query-result.png)
+![Result from above example](images/codeql-query-result.png)
 
 ## Contribution 2: ARGUS Docker Action Support
 Once our extractor was functional, we implemented it into a fork of ARGUS. We wrote a [proof-of-concept query](docker-queries/ql/lib/queries/sinks.ql) to identify two critical Dockerfile sinks. We identified that Docker actions commonly pass arguments to the run command to be implicitly passed to ENTRYPOINT/CMD statements. This was an additional challenge, as it meant that the explicit taint analysis queries would not be applicable in this case. However, we were ultimately able to pass the inputs identified from the action.yml file to the final SARIF files to add context to the results.
+
+Below is an example of an ENTRYPOINT statement. As you can see, there are no explicit arguments passed to the script. However, any arguments to the docker run command will be used as inputs to entrypoint.sh.
+
+![Example Dockerfile](images/dockerfile-example.png)
 
 # Evaluation
 
