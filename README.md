@@ -1,6 +1,7 @@
 # 759-argus-dockerfile
 
 This fork of [ARGUS](https://github.com/purs3lab/Argus) was created as part of a course project for CSEC 759: Advanced Software Security Analysis.
+
 Please see the [project report](report.md) for more information. 
 
 ## Usage
