@@ -1,14 +1,7 @@
-# Argus
+# 759-argus-dockerfile
 
-This repo contains the code for our USENIX Security '23 paper "ARGUS: A Framework for Staged Static Taint Analysis of GitHub Workflows and Actions". Argus is a comprehensive security analysis tool specifically designed for GitHub Actions. Built with an aim to enhance the security of CI/CD workflows, Argus utilizes taint-tracking techniques and an impact classifier to detect potential vulnerabilities in GitHub Action workflows.
-
-Visit our website - [secureci.org](https://secureci.org/argus) for more information.
-
-## Features
-
-- **Taint-Tracking**: Argus uses sophisticated algorithms to track the flow of potentially untrusted data from specific sources to security-critical sinks within GitHub Actions workflows. This enables the identification of vulnerabilities that could lead to code injection attacks.
-
-- **Impact Classifier**: Argus classifies identified vulnerabilities into High, Medium, and Low severity classes, providing a clearer understanding of the potential impact of each identified vulnerability. This is crucial in prioritizing mitigation efforts. 
+This fork of [ARGUS](https://github.com/purs3lab/Argus) was created as part of a course project for CSEC 759: Advanced Software Security Analysis.
+Please see the [project report](report.md) for more information. 
 
 ## Usage
 
@@ -30,6 +23,13 @@ python argus.py --mode [mode] --url [url] [--output-folder path_to_output] [--co
 - `--tag`: The tag. You must provide exactly one of: `--branch`, `--commit`, `--tag`. This parameter is optional.
 - `--action-path`: The (relative) path to the action. You cannot provide `--action-path` in repo mode. This parameter is optional.
 - `--workflow-path`: The (relative) path to the workflow. You cannot provide `--workflow-path` in action mode. This parameter is optional.
+
+### Modes
+
+'repo' can be used to analyze the full workflow for a given repository. 'action' can be used to analyze a specific published action, given its repository.
+Local actions and Docker Hub actions are not supported in 'repo' mode. 
+
+Most relevant to this project, Docker actions are only fully supported using `--mode action` and `--url` leading to a Docker action repository ([like this](https://github.com/actions/hello-world-docker-action))
 
 ### Example:
 
@@ -54,13 +54,6 @@ Argus can be run inside a docker container. To do so, follow the steps:
   - docker-compose run argus --mode {mode} --url {url to target repo}
 - Results will be available inside the `results` folder
 
-Temporary commands:
-```bash
-docker compose up -d
-docker exec -it 759-argus-dockerfile-argus-1 /bin/bash
-docker compose down --rmi all
-```
-
 ## Viewing SARIF Results
 
 You can view SARIF results either through an online viewer or with a Visual Studio Code (VSCode) extension.
@@ -79,9 +72,7 @@ If there is an issue with needing the Github authorization for running, you can 
 
 Argus is an open-source project, and we welcome contributions from the community. Whether it's reporting a bug, suggesting a feature, or writing code, your contributions are always appreciated!
 
-## Cite Argus 
-
-If you use Argus in your research, please cite our paper:
+## Citation
 
 ```
   @inproceedings{muralee2023Argus,
